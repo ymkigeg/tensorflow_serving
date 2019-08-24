@@ -96,7 +96,7 @@ docker cp $TESTDATA/saved_model_half_plus_two_cpu  5d62364f2186:/online_model
 tensorflow_model_server --port=8500 --rest_api_port=8501 --model_name=dev_model --model_base_path=/online_model  
 ```
 
-用上面的方法，在启动时，会发现下面这条日志：  
+Docker直接拉取镜像的方法，在启动时，会发现下面这条日志：  
 > Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA  
 
 说明，安装的Tensorflow Serving没有支持 AVX2 和 FMA 指令，因此无法充分利用CPU的能力，需要自行编译安装
