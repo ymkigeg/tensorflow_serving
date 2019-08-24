@@ -249,7 +249,10 @@ ln -s libstdc++.so.6.0.22 libstdc++.so.6
 
 ##### 测试
 ```bash
-serving/bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server --port=8500 --rest_api_port=8501 --enable_batching=true --model_name=test_model --model_base_path=$TESTDATA/saved_model_half_plus_two_cpu
+serving/bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server \
+  --port=8500 --rest_api_port=8501 \
+  --enable_batching=true --model_name=test_model \
+  --model_base_path=$TESTDATA/saved_model_half_plus_two_cpu
 
 curl -d '{"instances": [1.0, 2.0, 5.0]}'     -X POST http://localhost:8501/v1/models/test_model:predict
 ```
