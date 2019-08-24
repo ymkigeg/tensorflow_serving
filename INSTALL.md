@@ -75,7 +75,7 @@ curl -d '{"instances": [1.0, 2.0, 5.0]}' \
 上面，docker run 的两条命令效果是一样的，都是在docker中启动镜像tensorflow/serving，镜像的版本都是latest  
 -p 8501:8501 是指定暴露的端口，其中左边启动docker的宿主机的端口，右边是要绑定的容器暴露的端口  
 由于 tensorflow_model_server 默认会在8500启动 gRPC服务，在8501启动RestAPI服务  
-因此，上面的命令是将宿主机的8501绑定到了RestAPI接口  
+因此，上面的命令是将宿主机的8501绑定到了RestAPI接口, 没有绑定gRPC的接口，因此无法通过gRPC调用，需要则增加参数-p 8500:8500即可  
 随后，便可发送http请求  
 
 
