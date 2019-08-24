@@ -79,7 +79,7 @@ curl -d '{"instances": [1.0, 2.0, 5.0]}' \
 随后，便可发送http请求  
 
 
-####使用开发版
+#### 使用开发版
 上面拉取的是正式版，不可修改，我们还可以用开发版，定制镜像
 ```bash
 docker pull tensorflow/serving:latest-devel
@@ -97,7 +97,7 @@ tensorflow_model_server --port=8500 --rest_api_port=8501 --model_name=dev_model 
 ```
 
 用上面的方法，在启动时，会发现下面这条日志：  
-Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA  
+> Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA  
 说明，安装的Tensorflow Serving没有支持 AVX2 和 FMA 指令，因此无法充分利用CPU的能力，需要自行编译安装
    
 编译的方式有两种：
@@ -165,45 +165,37 @@ tools/run_in_docker.sh bazel build --copt=-mavx2 --copt=-mfma tensorflow_serving
 ```
 
 报错1：
-
+```text
 ERROR: /disk1/gaoqing/tensorflow_serving/serving/.cache/_bazel_root/a03072540d2e5d5fb519b5992c33970b/external/io_bazel_rules_closure/closure/private/defs.bzl:18:17: FileType function is not available. You may use a list of strings instead. You can temporarily reenable the function by passing the flag --incompatible_disallow_filetype=false
+```
 
 报错2：
-
+```text
 ERROR: /disk1/gaoqing/tensorflow_serving/serving/.cache/_bazel_root/a03072540d2e5d5fb519b5992c33970b/external/io_bazel_rules_closure/closure/testing/phantomjs_test.bzl:70:17: Traceback (most recent call last):
-
  File "/disk1/gaoqing/tensorflow_serving/serving/.cache/_bazel_root/a03072540d2e5d5fb519b5992c33970b/external/io_bazel_rules_closure/closure/testing/phantomjs_test.bzl", line 57
-
   rule(test = True, implementation = _imp..., ...")})
-
  File "/disk1/gaoqing/tensorflow_serving/serving/.cache/_bazel_root/a03072540d2e5d5fb519b5992c33970b/external/io_bazel_rules_closure/closure/testing/phantomjs_test.bzl", line 70, in rule
-
   attr.label_list(cfg = "data", allow_files = True)
-
 Using cfg = "data" on an attribute is a noop and no longer supported. Please remove it. You can use --incompatible_disallow_data_transition=false to temporarily disable this check.
-
-
+```
 
 编译完成后，运行 bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server --help  报错如下：
 
+```text
 bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server: /lib64/libstdc++.so.6: version `GLIBCXX_3.4.20' not found (required by bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server)
-
 bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server: /lib64/libstdc++.so.6: version `CXXABI_1.3.8' not found (required by bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server)
-
 bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server: /lib64/libstdc++.so.6: version `GLIBCXX_3.4.21' not found (required by bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server)
-
 bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server: /lib64/libstdc++.so.6: version `CXXABI_1.3.11' not found (required by bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server)
-
 bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server: /lib64/libstdc++.so.6: version `GLIBCXX_3.4.22' not found (required by bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server)
-
 bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server: /lib64/libm.so.6: version `GLIBC_2.27' not found (required by bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server)
-
 bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server: /lib64/libm.so.6: version `GLIBC_2.23' not found (required by bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server)
+```
 
+说明 gcc 和 glibc 两个包发生冲突了  
+但是一般情况下，安装了tensorflow，系统中就存在新版本的 gcc 和 glibc，可以直接找出来替换之  
 
-
-查找和替换软连接
-
+##### 查找和替换软连接
+```bash
 find / -name "libstdc++.so.*"
 # 发现有 /root/anaconda3/lib/libstdc++.so.6.0.25，因为在安装TensorFlow时会生成新的动态库
 # 然后复制和替换相应的软件连接
@@ -223,13 +215,13 @@ cd /usr/lib64
 rm -rf libm.so.6
 ln -s libm-2.27.so libm.so.6
 # 再次尝试，成功！！
+```
 
 
-如果没有找到 libstdc++.so.6.0.25，则更新gcc
-
+如果没有找到 libstdc++.so.6.0.25，则更新gcc  
+```bash
 yum groupinstall "Development Tools"
 yum install glibc-static libstdc++-static
-
 
 # http://ftp.gnu.org/gnu/gcc/
 wget http://ftp.gnu.org/gnu/gcc/gcc-6.4.0/gcc-6.4.0.tar.gz
@@ -244,42 +236,19 @@ cd build
 make -j4
 make install
 
-
 # 重启Linux
 cp /usr/local/lib64/libstdc++.so.6.0.22 /lib64
 cd /lib64
 rm -rf libstdc++.so.6
 ln -s libstdc++.so.6.0.22 libstdc++.so.6
-如果没有找到 libm-2.27.so，则更新安装
+```
 
-wget http://ftp.gnu.org/gnu/libc/glibc-2.30.tar.gz
-
-
-mkdir build
+如果没有找到 libm-2.27.so，也可以更新安装  
 
 
-# 报错
-# checking version of gmake... 3.82, bad
-# configure: error: 
-# *** These critical programs are missing or too old: make
-# *** Check the INSTALL file for required versions.
-# 说明 gmake 版本太老，更新gmake
-wget http://alpha.gnu.org/gnu/make/make-4.1.90.tar.gz
-tar -zxvf make-4.1.90.tar.gz 
-mkdir build 
-cd build
-../configure
-make && make install
-# 重启Linux
-make -v  # 查看版本
-mv /usr/bin/make /usr/bin/make.old
-cp /usr/local/bin/make /usr/bin/make
-
-
-
-
-测试
-
+##### 测试
+```bash
 serving/bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server --port=8500 --rest_api_port=8501 --enable_batching=true --model_name=test_model --model_base_path=$TESTDATA/saved_model_half_plus_two_cpu
 
 curl -d '{"instances": [1.0, 2.0, 5.0]}'     -X POST http://localhost:8501/v1/models/test_model:predict
+```
