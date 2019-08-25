@@ -75,7 +75,7 @@ curl -d '{"instances": [1.0, 2.0, 5.0]}' \
 上面，docker run 的两条命令效果是一样的，都是在docker中启动镜像tensorflow/serving，镜像的版本都是latest  
 -p 8501:8501 是指定暴露的端口，其中左边启动docker的宿主机的端口，右边是要绑定的容器暴露的端口  
 由于 tensorflow_model_server 默认会在8500启动 gRPC服务，在8501启动RestAPI服务  
-因此，上面的命令是将宿主机的8501绑定到了RestAPI接口  
+因此，上面的命令是将宿主机的8501绑定到了RestAPI接口, 没有绑定gRPC的接口，因此无法通过gRPC调用，需要则增加参数-p 8500:8500即可  
 随后，便可发送http请求  
 
 
@@ -96,8 +96,9 @@ docker cp $TESTDATA/saved_model_half_plus_two_cpu  5d62364f2186:/online_model
 tensorflow_model_server --port=8500 --rest_api_port=8501 --model_name=dev_model --model_base_path=/online_model  
 ```
 
-用上面的方法，在启动时，会发现下面这条日志：  
+Docker直接拉取镜像的方法，在启动时，会发现下面这条日志：  
 > Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA  
+
 说明，安装的Tensorflow Serving没有支持 AVX2 和 FMA 指令，因此无法充分利用CPU的能力，需要自行编译安装
    
 编译的方式有两种：
@@ -248,7 +249,10 @@ ln -s libstdc++.so.6.0.22 libstdc++.so.6
 
 ##### 测试
 ```bash
-serving/bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server --port=8500 --rest_api_port=8501 --enable_batching=true --model_name=test_model --model_base_path=$TESTDATA/saved_model_half_plus_two_cpu
+serving/bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server \
+  --port=8500 --rest_api_port=8501 \
+  --enable_batching=true --model_name=test_model \
+  --model_base_path=$TESTDATA/saved_model_half_plus_two_cpu
 
 curl -d '{"instances": [1.0, 2.0, 5.0]}'     -X POST http://localhost:8501/v1/models/test_model:predict
 ```
