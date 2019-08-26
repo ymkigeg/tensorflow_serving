@@ -204,7 +204,7 @@ public class grpc_client {
 
     public static void main(String[] args) throws IOException{
         Integer modelVersion = 1;
-        String host = "47.105.155.223";
+        String host = "127.0.0.1";
 
         String dataPath = "../../../data/data.json";
         InputStreamReader input = new InputStreamReader(new FileInputStream(new File(dataPath)));
