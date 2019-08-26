@@ -212,10 +212,10 @@ public class grpc_client {
         String json = bf.readLine();
         JSONObject jsonObject = JSON.parseObject(json);
 
-        PredictResponse response = predictWithRawInput(jsonObject, host, 8500, modelVersion);
-//        PredictResponse response = predictWithExampleInput(jsonObject, host, 9000, modelVersion);
+//        PredictResponse response = predictWithRawInput(jsonObject, host, 8500, modelVersion);
+        PredictResponse response = predictWithExampleInput(jsonObject, host, 9000, 2);
 
-        System.out.println(response.getOutputsMap());
+        System.out.println(response.getOutputsMap().get("output").getFloatValList());
 
     }
 }

@@ -2,13 +2,14 @@ import numpy as np
 import requests
 import json
 import base64
+import time
 
 from tensorflow_serving.apis import predict_pb2, prediction_service_pb2 as prediction_service_pb2_grpc
 
 import grpc
 import tensorflow as tf
 
-host = '127.0.0.1'
+host = '47.105.155.223'
 
 
 def toy_demo():
@@ -73,11 +74,16 @@ def grpc_predict_example(input_datas):
 
     example_proto = tf.train.Example(features=tf.train.Features(feature=feature))
     serialize_example = example_proto.SerializeToString()
-    request.inputs['examples'].CopyFrom(tf.make_tensor_proto(serialize_example,
-                                                             dtype=tf.string, shape=[1]))
-
-    response = stub.Predict(request, 5.0)
-    print(response.outputs)
+    batch_size = 200
+    serialize_examples = [serialize_example] * batch_size
+    request.inputs['examples'].CopyFrom(tf.make_tensor_proto(serialize_examples,
+                                                             dtype=tf.string, shape=[batch_size]))
+    for _ in range(10):
+        begin = time.time()
+        response = stub.Predict(request, 5.0)
+        end = time.time()
+        print(end - begin)
+        print(response.outputs["output"].float_val)
 
 
 with open('../../data/data.json', 'r') as f:
