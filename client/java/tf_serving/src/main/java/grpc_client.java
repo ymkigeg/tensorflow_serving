@@ -36,6 +36,7 @@ public class grpc_client {
             TensorProto.Builder tensorProtoBuilder = TensorProto.newBuilder();
 
             TensorShapeProto.Builder tensorShapeBuilder = TensorShapeProto.newBuilder();
+            // 第一维是 batch_size
             tensorShapeBuilder.addDim(TensorShapeProto.Dim.newBuilder().setSize(1));
             if (jsonObject.get(key) instanceof List) {
                 tensorShapeBuilder.addDim(TensorShapeProto.Dim.newBuilder().setSize(50));
@@ -48,9 +49,12 @@ public class grpc_client {
                 tensorProtoBuilder.setDtype(DataType.DT_STRING);
                 ByteString bytes = ByteString.copyFromUtf8((String)jsonObject.get(key));
                 tensorProtoBuilder.addStringVal(bytes);
+                // 如果是batch，每一个key都要添加batch数量的val
+                // tensorProtoBuilder.addStringVal(bytes);
             } else if (key.equals("note_video_duration") || key.equals("note_id")) {
                 tensorProtoBuilder.setDtype(DataType.DT_INT64);
                 tensorProtoBuilder.addInt64Val((Integer)jsonObject.get(key));
+                // tensorProtoBuilder.addInt64Val((Integer)jsonObject.get(key));
             } else if (key.equals("last_note_ids")) {
                 tensorProtoBuilder.setDtype(DataType.DT_INT64);
                 List<Integer> integers = (List<Integer>)jsonObject.get(key);
@@ -59,6 +63,7 @@ public class grpc_client {
                     longs.add(i.longValue());
                 }
                 tensorProtoBuilder.addAllInt64Val(longs);
+                // tensorProtoBuilder.addAllInt64Val(longs);
             } else if (key.equals("last_note_creators")) {
                 tensorProtoBuilder.setDtype(DataType.DT_STRING);
                 List<String> stringList = (List<String>)jsonObject.get(key);
@@ -67,6 +72,7 @@ public class grpc_client {
                     byteStrings.add(ByteString.copyFromUtf8(s));
                 }
                 tensorProtoBuilder.addAllStringVal(byteStrings);
+                // tensorProtoBuilder.addAllStringVal(byteStrings);
             }
 
             tensorProtoMap.put(key, tensorProtoBuilder.build());
@@ -121,11 +127,16 @@ public class grpc_client {
         Features features = Features.newBuilder().putAllFeature(inputFeatureMap).build();
         ByteString inputStr = Example.newBuilder().setFeatures(features).build().toByteString();
 
+        // batch predict
+        List<ByteString> inputBatch = new ArrayList<ByteString>();
+        inputBatch.add(inputStr);
+        inputBatch.add(inputStr);
+
         TensorShapeProto.Builder tensorShapeBuilder = TensorShapeProto.newBuilder();
-        tensorShapeBuilder.addDim(TensorShapeProto.Dim.newBuilder().setSize(1).build());
+        tensorShapeBuilder.addDim(TensorShapeProto.Dim.newBuilder().setSize(2).build());
 
         TensorProto proto = TensorProto.newBuilder()
-                .addStringVal(inputStr)
+                .addAllStringVal(inputBatch)
                 .setTensorShape(tensorShapeBuilder.build())
                 .setDtype(DataType.DT_STRING)
                 .build();
@@ -193,7 +204,7 @@ public class grpc_client {
 
     public static void main(String[] args) throws IOException{
         Integer modelVersion = 1;
-        String host = "127.0.0.1";
+        String host = "47.105.155.223";
 
         String dataPath = "../../../data/data.json";
         InputStreamReader input = new InputStreamReader(new FileInputStream(new File(dataPath)));
@@ -201,8 +212,8 @@ public class grpc_client {
         String json = bf.readLine();
         JSONObject jsonObject = JSON.parseObject(json);
 
-//        PredictResponse response = predictWithRawInput(jsonObject, host, 8500, modelVersion);
-        PredictResponse response = predictWithExampleInput(jsonObject, host, 9000, modelVersion);
+        PredictResponse response = predictWithRawInput(jsonObject, host, 8500, modelVersion);
+//        PredictResponse response = predictWithExampleInput(jsonObject, host, 9000, modelVersion);
 
         System.out.println(response.getOutputsMap());
 
