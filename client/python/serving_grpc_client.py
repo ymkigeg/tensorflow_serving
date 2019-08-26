@@ -8,7 +8,7 @@ from tensorflow_serving.apis import predict_pb2, prediction_service_pb2 as predi
 import grpc
 import tensorflow as tf
 
-host = '127.0.0.1'
+host = '47.105.155.223'
 
 
 def toy_demo():
