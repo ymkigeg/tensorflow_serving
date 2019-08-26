@@ -7,5 +7,5 @@
 ## 启动Serving
 
 ## gRPC调用
-* python 实现
-* Java 实现
+* [python 实现](client/python)
+* [Java 实现](client/java)
