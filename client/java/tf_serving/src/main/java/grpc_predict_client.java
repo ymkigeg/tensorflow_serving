@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class grpc_client {
+public class grpc_predict_client {
 
     public static Map<String, TensorProto> parseTensorProto(JSONObject jsonObject) {
         Map<String, TensorProto> tensorProtoMap = new HashMap<String, TensorProto>();
@@ -150,10 +150,6 @@ public class grpc_client {
         final String MODEL_NAME = "test_dnn_raw";
         final String SIGNATURE_NAME = "serving_default";
 
-        ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
-
-        //这里还是先用block模式
-        PredictionServiceBlockingStub stub = PredictionServiceGrpc.newBlockingStub(channel);
         //创建请求
         Predict.PredictRequest.Builder predictRequestBuilder = Predict.PredictRequest.newBuilder();
 
@@ -169,19 +165,13 @@ public class grpc_client {
 
         predictRequestBuilder.putAllInputs(tensorProtoMap);
 
-        //访问并获取结果
-        PredictResponse predictResponse = stub.predict(predictRequestBuilder.build());
-        return predictResponse;
+        return predict(predictRequestBuilder.build(), host, port);
     }
 
     public static PredictResponse predictWithExampleInput(JSONObject jsonObject, String host, int port, Integer modelVersion) {
         final String MODEL_NAME = "test_dnn";
         final String SIGNATURE_NAME = "serving_default";
 
-        ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
-
-        //这里还是先用block模式
-        PredictionServiceBlockingStub stub = PredictionServiceGrpc.newBlockingStub(channel);
         //创建请求
         Predict.PredictRequest.Builder predictRequestBuilder = Predict.PredictRequest.newBuilder();
 
@@ -196,9 +186,15 @@ public class grpc_client {
         Map<String, TensorProto> tensorProtoMap = parseExampleProto(jsonObject);
 
         predictRequestBuilder.putAllInputs(tensorProtoMap);
+        return predict(predictRequestBuilder.build(), host, port);
+    }
 
+    public static PredictResponse predict(PredictRequest predictRequest, String host, int port) {
         //访问并获取结果
-        PredictResponse predictResponse = stub.predict(predictRequestBuilder.build());
+        ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+        //这里还是先用block模式
+        PredictionServiceBlockingStub stub = PredictionServiceGrpc.newBlockingStub(channel);
+        PredictResponse predictResponse = stub.predict(predictRequest);
         return predictResponse;
     }
 
