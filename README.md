@@ -22,6 +22,10 @@ docker run -p 9000:9000 -p 9001:9001 \
    --enable_batching=true --model_name=test_dnn --model_base_path=/models/test_dnn &
 ```
 
+## 利用配置文件启动serving
+脚本见 [run.sh](run.sh)  
+配置文件见 [models.config](models.config)
+
 ## gRPC调用
 * [python 实现](client/python)
 * [Java 实现](client/java)
