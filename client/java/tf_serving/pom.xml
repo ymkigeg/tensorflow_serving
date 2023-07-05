@@ -10,7 +10,7 @@
 
     <properties>
         <tensorflow.version>1.8.0</tensorflow.version>
-        <grpc.version>1.23.0</grpc.version>
+        <grpc.version>1.53.0</grpc.version>
         <protobuf.version>3.9.1</protobuf.version>
     </properties>
 
